@@ -5,7 +5,16 @@ Tests for the German contrib.
 
 from unittest import TestCase
 
-from evennia import DefaultCharacter, DefaultObject, DefaultRoom, create_object
+from django.test import override_settings
+
+from evennia import (
+    DefaultCharacter,
+    DefaultExit,
+    DefaultObject,
+    DefaultRoom,
+    create_object,
+)
+from evennia.utils.batchprocessors import BATCHCODE
 from evennia.utils.test_resources import BaseEvenniaCommandTest
 
 from .german import CmdGrammatik, CmdSchau, GermanObjectMixin
@@ -80,6 +89,10 @@ class GermanRoom(GermanObjectMixin, DefaultRoom):
     """Test typeclass."""
 
 
+class GermanExit(GermanObjectMixin, DefaultExit):
+    """Test typeclass."""
+
+
 class TestGermanCommands(BaseEvenniaCommandTest):
     """Mixin and commands against real objects."""
 
@@ -128,3 +141,23 @@ class TestGermanCommands(BaseEvenniaCommandTest):
         self.call(CmdGrammatik(), "Lampe", "Lampe: eine kleine Lampe, zwei kleine Lampen")
         self.call(CmdGrammatik(), "Lampe = x", "Das Geschlecht muss m, f oder n sein.")
         self.call(CmdGrammatik(), "", "Verwendung: grammatik")
+
+    @override_settings(
+        BASE_OBJECT_TYPECLASS=f"{__name__}.GermanObject",
+        BASE_CHARACTER_TYPECLASS=f"{__name__}.GermanCharacter",
+        BASE_ROOM_TYPECLASS=f"{__name__}.GermanRoom",
+        BASE_EXIT_TYPECLASS=f"{__name__}.GermanExit",
+    )
+    def test_example_world(self):
+        for code in BATCHCODE.parse_file("base_systems.german.example_world"):
+            self.assertIsNone(BATCHCODE.code_exec(code, extra_environ={"caller": self.char2}))
+        self.call(
+            CmdSchau(),
+            "",
+            "Marktplatz\nEin staubiger Platz unter alten Linden.\nAusgänge: Norden\n"
+            "Du siehst: drei rote Äpfel, einen rostigen Dolch, zwei Lampen, Stein "
+            "und eine schwere Truhe.",
+            caller=self.char2,
+        )
+        self.char2.execute_cmd("norden")
+        self.call(CmdSchau(), "den kleinen Drachen", "Drache\nEr döst", caller=self.char2)

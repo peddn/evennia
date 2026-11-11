@@ -64,11 +64,11 @@ class GermanObjectMixin:
 
         """
         self.gender, self.plural, self.adjective, self.oblique = gender, plural, adjective, oblique
-        forms = [f"{adjective}{ending} {self.key}" for ending in ("e", "er", "es", "en")]
+        nouns = [self.key] + ([oblique] if oblique else [])
+        endings = ("e", "er", "es", "en") if adjective else ()
+        forms = nouns[1:] + [f"{adjective}{ending} {noun}" for noun in nouns for ending in endings]
         self.aliases.clear(category=_ALIAS_CATEGORY)
-        self.aliases.batch_add(
-            *((form, _ALIAS_CATEGORY) for form in (forms if adjective else []) + [oblique] if form)
-        )
+        self.aliases.batch_add(*((form, _ALIAS_CATEGORY) for form in forms))
 
     def get_numbered_name(self, count, looker, **kwargs):
         """

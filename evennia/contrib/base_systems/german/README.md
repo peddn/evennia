@@ -16,14 +16,15 @@ Dolch`) and use `ich`, `mich`, `mir` and `hier` like `me` and `here`.
 
 ## Installation
 
-Add the mixin to your typeclasses, before the Evennia parent:
+Add the mixin to `ObjectParent`, which all your objects, characters, rooms
+and exits inherit from:
 
 ```python
-# in mygame/typeclasses/objects.py (same for characters.py and rooms.py)
+# in mygame/typeclasses/objects.py
 from evennia.contrib.base_systems.german import GermanObjectMixin
 
-class Object(GermanObjectMixin, ObjectParent, DefaultObject):
-    pass
+class ObjectParent(GermanObjectMixin):
+    ...
 ```
 
 Add the commands:
@@ -40,6 +41,15 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
 For the strings Evennia translates itself, also set `USE_I18N = True` and
 `LANGUAGE_CODE = "de"` in your settings.
+
+## Example world
+
+With the mixin in place and the server reloaded, build a small test area
+and get moved there (this also gives you the German commands):
+
+    batchcode base_systems.german.example_world
+
+Remove it again with `py [o.delete() for o in evennia.search_tag("german_example")]`.
 
 ## Grammar
 
