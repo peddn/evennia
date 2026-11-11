@@ -58,25 +58,30 @@ grammar set once. The key is the bare noun in nominative singular.
 
 ```python
 dolch = create_object(Object, key="Dolch")
-dolch.set_grammar("m", "Dolche", "rostig")          # gender, plural, adjective stem
+dolch.set_grammar("m", "Dolche", "alt rostig")         # gender, plural, adjective stems
 drache.set_grammar("m", "Drachen", oblique="Drachen")  # der Drache, den Drachen
+herz.set_grammar("n", "Herzen", genitive="Herzens")    # only for irregular genitives
 ```
 
-In-game, builders use `grammatik Dolch = m, Dolche, rostig`. An object without
+Without `genitive`, the genitive is the `oblique` form or else the noun with
+"-s" ("-es" after s, ß, x, z); feminine nouns stay unchanged.
+
+In-game, builders use `grammatik Dolch = m, Dolche, alt rostig`. An object without
 a gender is shown without article, as proper names should be.
 
 Your own commands get inflected names from the standard Evennia hook:
 
 ```python
-obj.get_numbered_name(1, looker, case="akk", return_string=True)                 # einen rostigen Dolch
-obj.get_numbered_name(1, looker, case="dat", definite=True, return_string=True)  # dem rostigen Dolch
-obj.get_numbered_name(3, looker, case="akk", return_string=True)                 # drei rostige Dolche
+obj.get_numbered_name(1, looker, case="akk", return_string=True)                 # einen alten rostigen Dolch
+obj.get_numbered_name(1, looker, case="gen", definite=True, return_string=True)  # des alten rostigen Dolchs
+obj.get_numbered_name(3, looker, case="dat", return_string=True)                 # drei alten rostigen Dolchen
 ```
 
 The grammar itself is available as the plain function `grammar.noun_phrase`.
 
 ## Limitations
 
-- Cases are nominative (`nom`), accusative (`akk`) and dative (`dat`); no genitive.
 - Call `set_grammar` again after renaming an object.
-- English default commands keep working but mix languages ("You pick up ein Dolch").
+- English default commands keep working, but they do not ask for a case and
+  so get the nominative, which is often wrong: "You pick up ein rostiger
+  Dolch." Use the German commands instead.

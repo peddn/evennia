@@ -70,6 +70,32 @@ class TestNounPhrase(TestCase):
         self.assertEqual(noun_phrase(**drache, case="akk"), "einen Drachen")
         self.assertEqual(noun_phrase(**drache, case="dat", definite=True), "dem Drachen")
 
+    def test_several_adjectives(self):
+        dolch = dict(noun="Dolch", gender="m", plural="Dolche", adjective="alt rostig")
+        self.assertEqual(noun_phrase(**dolch), "ein alter rostiger Dolch")
+        self.assertEqual(noun_phrase(**dolch, case="akk"), "einen alten rostigen Dolch")
+        self.assertEqual(noun_phrase(**dolch, count=2), "zwei alte rostige Dolche")
+
+    def test_genitive(self):
+        self.assertEqual(noun_phrase("Dolch", "m", case="gen", definite=True), "des Dolchs")
+        self.assertEqual(noun_phrase("Schloss", "n", case="gen"), "eines Schlosses")
+        self.assertEqual(noun_phrase("Lampe", "f", case="gen", definite=True), "der Lampe")
+        self.assertEqual(
+            noun_phrase("Dolch", "m", adjective="rostig", case="gen"), "eines rostigen Dolchs"
+        )
+        self.assertEqual(
+            noun_phrase("Drache", "m", oblique="Drachen", case="gen", definite=True), "des Drachen"
+        )
+        self.assertEqual(
+            noun_phrase("Herz", "n", genitive="Herzens", case="gen", definite=True), "des Herzens"
+        )
+        self.assertEqual(noun_phrase("Herz", "n", genitive="Herzens", case="akk"), "ein Herz")
+        self.assertEqual(noun_phrase("Anna", case="gen"), "Annas")
+        self.assertEqual(noun_phrase("Hans", case="gen"), "Hans'")
+        apfel = dict(noun="Apfel", gender="m", plural="Äpfel", adjective="rot", count=2, case="gen")
+        self.assertEqual(noun_phrase(**apfel), "zwei roter Äpfel")
+        self.assertEqual(noun_phrase(**apfel, definite=True), "der zwei roten Äpfel")
+
     def test_strip_article(self):
         self.assertEqual(strip_article("den rostigen Dolch"), "rostigen Dolch")
         self.assertEqual(strip_article("Eine Lampe"), "Lampe")
@@ -131,6 +157,12 @@ class TestGermanCommands(BaseEvenniaCommandTest):
         for query in ("Dolch", "den Dolch", "den rostigen Dolch", "rostiger dolch"):
             self.call(CmdSchau(), query, "Dolch\nScharf ist er nicht mehr.", caller=self.char2)
 
+    def test_search_several_adjectives(self):
+        self.obj1.set_grammar("m", "Dolche", "alt rostig")
+        for query in ("alten Dolch", "den rostigen Dolch", "alten rostigen Dolch"):
+            self.assertEqual(self.char2.search(query), self.obj1)
+        self.assertIsNone(self.char2.search("rostigen alten Dolch", quiet=True) or None)
+
     def test_schau_self_and_here(self):
         self.call(CmdSchau(), "mich", "Char2", caller=self.char2)
         self.call(CmdSchau(), "hier", "Room", caller=self.char2)
@@ -139,6 +171,10 @@ class TestGermanCommands(BaseEvenniaCommandTest):
         self.call(CmdGrammatik(), "Lampe = f, Lampen, klein", "Lampe: eine kleine Lampe, zwei")
         self.assertEqual(self.obj2.adjective, "klein")
         self.call(CmdGrammatik(), "Lampe", "Lampe: eine kleine Lampe, zwei kleine Lampen")
+        self.call(
+            CmdGrammatik(), "Lampe = f, Lampen, alt klein, , Lampes", "Lampe: eine alte kleine"
+        )
+        self.assertEqual(self.obj2.genitive, "Lampes")
         self.call(CmdGrammatik(), "Lampe = x", "Das Geschlecht muss m, f oder n sein.")
         self.call(CmdGrammatik(), "", "Verwendung: grammatik")
 
@@ -155,7 +191,7 @@ class TestGermanCommands(BaseEvenniaCommandTest):
             CmdSchau(),
             "",
             "Marktplatz\nEin staubiger Platz unter alten Linden.\nAusgänge: Norden\n"
-            "Du siehst: drei rote Äpfel, einen rostigen Dolch, zwei Lampen, Stein "
+            "Du siehst: drei rote Äpfel, einen alten rostigen Dolch, zwei Lampen, Stein "
             "und eine schwere Truhe.",
             caller=self.char2,
         )

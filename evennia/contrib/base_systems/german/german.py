@@ -46,27 +46,38 @@ class GermanObjectMixin:
     plural = AttributeProperty(None, autocreate=False)
     adjective = AttributeProperty(None, autocreate=False)
     oblique = AttributeProperty(None, autocreate=False)
+    genitive = AttributeProperty(None, autocreate=False)
 
-    def set_grammar(self, gender=None, plural=None, adjective=None, oblique=None):
+    def set_grammar(self, gender=None, plural=None, adjective=None, oblique=None, genitive=None):
         """
         Set the grammar of this object's key. Call again after renaming it.
 
         Args:
             gender (str, optional): One of "m", "f" or "n". `None` for proper names.
             plural (str, optional): Nominative plural, like "Dolche".
-            adjective (str, optional): Adjective stem without ending, like "rostig".
+            adjective (str, optional): Adjective stems without ending, separated
+                by spaces, like "alt rostig".
             oblique (str, optional): Singular form used outside the nominative,
                 for nouns like "Drache" -> "Drachen".
+            genitive (str, optional): Genitive singular, if it is irregular,
+                like "Herzens".
 
         Notes:
             This also stores aliases so the object is found by its inflected
-            forms, like "rostigen Dolch".
+            forms, like "rostigen Dolch" or "alten rostigen Dolch".
 
         """
-        self.gender, self.plural, self.adjective, self.oblique = gender, plural, adjective, oblique
+        self.gender, self.plural, self.adjective = gender, plural, adjective
+        self.oblique, self.genitive = oblique, genitive
+        stems = (adjective or "").split()
+        groups = dict.fromkeys([(stem,) for stem in stems] + [tuple(stems)] * bool(stems))
         nouns = [self.key] + ([oblique] if oblique else [])
-        endings = ("e", "er", "es", "en") if adjective else ()
-        forms = nouns[1:] + [f"{adjective}{ending} {noun}" for noun in nouns for ending in endings]
+        forms = nouns[1:] + [
+            " ".join([*(f"{stem}{ending}" for stem in group), noun])
+            for noun in nouns
+            for group in groups
+            for ending in ("e", "er", "es", "en")
+        ]
         self.aliases.clear(category=_ALIAS_CATEGORY)
         self.aliases.batch_add(*((form, _ALIAS_CATEGORY) for form in forms))
 
@@ -83,7 +94,7 @@ class GermanObjectMixin:
             return_string (bool): Return only the form matching `count`
                 instead of a tuple.
             no_article (bool): Return the bare noun if `count` is 1.
-            case (str): One of "nom" (default), "akk" or "dat".
+            case (str): One of "nom" (default), "akk", "dat" or "gen".
             definite (bool): Use the definite article.
 
         Returns:
@@ -96,6 +107,7 @@ class GermanObjectMixin:
             plural=self.plural,
             adjective=self.adjective,
             oblique=self.oblique,
+            genitive=self.genitive,
             case=kwargs.get("case", "nom"),
             definite=kwargs.get("definite", False),
         )
@@ -225,15 +237,17 @@ class CmdGrammatik(default_cmds.MuxCommand):
 
     Verwendung:
       grammatik <Gegenstand>
-      grammatik <Gegenstand> = <Geschlecht>[, <Mehrzahl>[, <Adjektiv>[, <Beugung>]]]
+      grammatik <Gegenstand> = <Geschlecht>[, <Mehrzahl>[, <Adjektive>[, <Beugung>[, <Genitiv>]]]]
 
     Beispiele:
-      grammatik Dolch = m, Dolche, rostig
+      grammatik Dolch = m, Dolche, alt rostig
       grammatik Drache = m, Drachen, , Drachen
+      grammatik Herz = n, Herzen, , , Herzens
 
-    Das Geschlecht ist m, f oder n. Das Adjektiv wird ohne Endung angegeben
-    ("rostig", "teur"). Die Beugung ist nur für Wörter nötig, die außerhalb
-    des Nominativs eine Endung bekommen ("der Drache", aber "den Drachen").
+    Das Geschlecht ist m, f oder n. Adjektive werden ohne Endung und durch
+    Leerzeichen getrennt angegeben ("rostig", "teur"). Die Beugung ist nur für
+    Wörter nötig, die außerhalb des Nominativs eine Endung bekommen ("der
+    Drache", aber "den Drachen"), der Genitiv nur, wenn er unregelmäßig ist.
     Ohne Angaben wird die aktuelle Grammatik angezeigt.
     """
 
@@ -256,7 +270,7 @@ class CmdGrammatik(default_cmds.MuxCommand):
             if gender not in ("m", "f", "n"):
                 self.msg("Das Geschlecht muss m, f oder n sein.")
                 return
-            obj.set_grammar(gender, *rest[:3])
+            obj.set_grammar(gender, *rest[:4])
         self.msg(f"{obj.key}: " + ", ".join(obj.get_numbered_name(2, self.caller, key=obj.key)))
 
 

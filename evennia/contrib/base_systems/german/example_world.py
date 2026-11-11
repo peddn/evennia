@@ -40,7 +40,7 @@ schmiede = create(room, "Schmiede", desc="Hitze und Hammerschläge erfüllen den
 create(exit_, "Norden", markt, aliases=["n"], destination=schmiede)
 create(exit_, "Süden", schmiede, aliases=["s"], destination=markt)
 
-create(thing, "Dolch", markt, ("m", "Dolche", "rostig"), "Scharf ist er nicht mehr.")
+create(thing, "Dolch", markt, ("m", "Dolche", "alt rostig"), "Scharf ist er nicht mehr.")
 create(thing, "Truhe", markt, ("f", "Truhen", "schwer"))
 create(thing, "Stein", markt, desc="Ein Gegenstand ohne Grammatik, also ohne Artikel.")
 for _ in range(3):
@@ -54,4 +54,4 @@ create(settings.BASE_CHARACTER_TYPECLASS, "Anna", schmiede, desc="Die Schmiedin.
 
 caller.cmdset.add(GermanCmdSet, persistent=True)
 caller.move_to(markt, quiet=True)
-caller.msg("Beispielwelt erstellt. Probiere: schau, schau den roten Apfel, norden, schau mich")
+caller.msg("Beispielwelt erstellt. Probiere: schau, schau den alten Dolch, norden, schau mich")
